@@ -1,0 +1,91 @@
+entity adder is 
+	port (
+				Input		: in bit_vector(1 downto 0);
+				output	: out bit;
+				enable	: in bit;
+				rst,clk	: in bit :='1'
+				);
+				
+end adder;
+
+architecture day of adder is 
+	type state_type is (carry, notcarry, stop);
+	signal state, next_state : state_type;
+	
+	begin 
+	process(clk,rst)
+	begin 
+		if(rst='1') 
+			then state <= stop; 
+		elsif (clk='1' and clk'event) 
+			then state <= next_State; 
+		end if;
+	end process; 
+	
+	process (state, enable, input) 
+	begin 
+	case state is 
+		when notcarry => 
+			if(input="11") then
+				next_state <= carry;
+			elsif (enable='0') then 
+				next_state <= stop;
+			else 
+				next_state <= notcarry; 
+			end if;
+			
+		when carry => 
+			if(input="00") then 
+				next_state <= notcarry;
+			elsif (enable ='0') then 
+				next_state <= stop;
+			else 	
+				next_state <= carry; 
+			end if;
+			
+		when stop => 
+			if(enable='1') then 
+				next_state <= notcarry;
+			else 
+				next_state <= stop;
+			end if;
+		end case ;
+	end process;
+	
+	
+	process (clk,rst,enable,input,state) 
+	
+	begin 
+	case state is 
+		when notcarry => 
+			if (input="11") then
+				output <='0';
+			elsif (input="01") then 
+				output <='1';
+			elsif (input="10") then
+				output <='1';
+			elsif (enable='0') then 
+				output <= '0';
+			else
+				output <='0';
+			end if; 
+		
+		when carry => 
+			if (input="00") then 
+				output <='1';
+			elsif (input="01") then 
+				output <='0';
+			elsif (input="10") then 
+				output <='0';
+			elsif (input="11") then 
+				output <='1';
+			else 
+				output <= '0' ;
+			end if; 
+		
+		when stop => 
+			output <= '0'; 
+			
+		end case;
+	end process; 
+end day;
