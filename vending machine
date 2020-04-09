@@ -1,0 +1,93 @@
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+entity ven_machine is
+	port (
+				rst, clk   		: in bit :='1';
+				money_user		: in integer := 0;
+				money_price 	: inout integer :=0;
+				choose			: in integer :=0;
+				request			: in integer :=0;
+				money_refund   : out integer :=0;
+				lcd 				: out string (1 to 16)
+				);
+end ven_machine; 
+
+architecture movie of ven_machine is 
+	type state_type is (idle, select_product, check_money, check_product, grab_product);
+	signal state, next_state : state_type; 
+	signal stock : integer := 5; 
+	signal buff_money :  integer :=0; 
+ 
+	
+	type beverage is array (1 to 5) of string (1 to 8);
+	type price is array (1 to 5) of integer; 
+	
+	constant listbev : beverage 
+		:= ("Susu    ", "Cocacola", "Fruitea ", "Sprite  ", "Mineral ");
+	constant pricebev : price 
+		:= (5000,6000,7000,8000,9000);
+		
+	constant lessmoney : string(1 to 16) := "Uang tidak cukup";
+	constant lessproduct : string(1 to 16) := "Barang habis    ";
+	
+	begin 
+	process (clk, rst)
+	begin 
+		if(rst='1') 
+			then state <= idle; 
+		elsif (clk='1' and clk'event) 
+			then state <= next_State; 
+		end if;
+	end process; 
+	
+
+	process (state, money_user,money_price, request,choose) 
+	begin 
+	case state is 
+		when idle => 
+			if (buff_money /= money_user) then
+				next_state <= select_product;
+				buff_money <= money_user; 
+			else
+				next_state <= idle;
+			end if; 
+		
+		when select_product => 
+			if (choose > 0 and choose <=5 ) then 
+				money_price <= pricebev(choose); 
+				next_state  <= check_money; 
+			else
+				money_price <= 0;
+				next_state   <= select_product; 
+			end if;
+			
+		when check_money => 
+			if (buff_money<money_price) then 
+				next_state <= select_product; 
+				lcd 		  <= lessmoney; 
+			else 
+				next_state <= check_product; 
+			end if; 
+			
+		when check_product => 
+			if (stock<request) then 
+				next_state <= select_product;
+				lcd		  <= lessproduct; 
+			else 
+				next_state <= grab_product; 
+			end if; 
+		
+		
+		when grab_product => 
+			money_refund <= buff_money-money_price; 
+			stock <= stock-1; 
+		   next_state   <= idle ;
+			
+		end case; 		
+	end process; 
+			
+
+end movie;
+				
